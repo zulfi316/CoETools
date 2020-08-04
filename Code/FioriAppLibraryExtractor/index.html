@@ -1,0 +1,51 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script
+  src="https://code.jquery.com/jquery-1.12.4.min.js"
+  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+  crossorigin="anonymous"></script>
+
+  <script type="text/javascript" src="./code.js"></script>
+
+  <title>Fiori App Library Parser</title>
+  
+  <script type="text/javascript">
+	
+	
+	
+  </script>
+</head>
+
+<body>
+<div style="padding: 10px">
+  Also Include WebGUI and WebDynPro Apps:
+   <input type="checkbox" id="includeWebGUI" checked="checked" /><br /> <br />
+  Fiori Apps Library File:<br />
+  <input type="file" id="selectFAPFile" value="Import" /><br />
+  <br />
+  Required T-Code File:<br />
+  <input type="file" id="selectRequiredTCodeFile" value="Import" /><br />
+  <br/> <br/>
+  <button onclick="beginProcessing()">Calculate</button>
+
+   <div id='MessageHolder'></div>
+
+   <a href="#" id="testAnchor"></a>
+   
+   <script type="text/javascript">
+   $($("#testAnchor")[0]).click(function(){
+  $('#testAnchor').attr('href', data_type + ', ' + encodeURIComponent(tab_text));
+        $('#testAnchor').attr('download', 'Results.xls');
+});
+   </script>
+   
+   <br />
+   
+	<div id="fap-resultset-appswithoutmobile">&nbsp;</div>
+</div>
+</body>
+</html>
