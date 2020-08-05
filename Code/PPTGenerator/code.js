@@ -1,81 +1,115 @@
 function PPTGenerator() {
 
 	return {
-		processDataSet: function () {
+
+		oResultSet: {},
+		iDateIndex: 0,
+		iTimeIndex: 0,
+		iAppServerIndex: 0,
+		iMeasuresIndex: 0,
+		aDataSet: [],
+
+		init: function () {
+			this.oResultSet = {};
+			this.iDateIndex = 0;
+			this.iTimeIndex = 0;
+			this.iAppServerIndex = 0;
+			this.iMeasuresIndex = 0;
+			this.aDataSet = [];
+		},
+
+		setDataPayload: function () {
+
+			// First step will be to get all the different parameters in the passed in dataset
 
 			// Get everything the user entered -
-			var sDataSet = document.querySelector("#dataSet").value;
+			let sDataSet = document.querySelector("#dataSet").value;
 
 			// No input? Stop
 			if (sDataSet.trim() === "")
 				throw new Error("- No input -");
 
 			// Split by new line -
-			var aDataSet = sDataSet.split(/\r\n|\n|\r/);
+			this.aDataSet = sDataSet.split(/\r\n|\n|\r/);
 
-			// First step will be to get all the different parameters in the passed in dataset
+		},
 
-			// Stage 1 - Limit to user logins and sessions
-
-			var oResultSet = {};
-			var iDateIndex = 0,
-				iTimeIndex = 0,
-				iAppServerIndex = 0;
-
-			// TODO: Add this back into result set
-			var sDate = aDataSet[0].trim().split(' ')[0];
-
-			// Get the raw measures -
-			let iMeasuresIndex = 0;
-			for (iMeasuresIndex = 0; iMeasuresIndex < aDataSet.length; iMeasuresIndex++) {
-				if (aDataSet[iMeasuresIndex].indexOf("AS Instance") !== -1)
+		setMeasuresIndex: function () {
+			for (this.iMeasuresIndex = 0; this.iMeasuresIndex < this.aDataSet.length; this.iMeasuresIndex++) {
+				if (this.aDataSet[this.iMeasuresIndex].indexOf("AS Instance") !== -1)
 					break;
 			}
-			var aMeasureList = aDataSet[iMeasuresIndex].split('|').map(measure => measure.trim());
 
-			//Convert to key index pair -
+			if (this.iMeasuresIndex === this.aDataSet.length)
+				throw new Error("- Invalid input; no AS Instance found in dataset -");
+
+		},
+
+		buildEmptyResultSet: function () {
+
+			// Get the raw measures -
+
+			const aMeasureList = this.aDataSet[this.iMeasuresIndex].split('|').map(measure => measure.trim());
+
+			// There has to be at least three measures, time, app server + one other metric
+			if (aMeasureList.length < 3)
+				throw new Error("- Invalid input; Measures parsing failed - ");
+
+			//All good, make the result set -
 			for (let i = 0; i < aMeasureList.length; i++) {
 
-				let sCurrentMeasure = aMeasureList[i];
+				const sCurrentMeasure = aMeasureList[i];
 
 				if (sCurrentMeasure) {
-					// Remove trailing spaces from the measure -
-					sCurrentMeasure.trim();
 
 					if (sCurrentMeasure !== "") {
 
 						// Is it one of the special measures?
-						if (sCurrentMeasure.toLowerCase() == "date" && iDateIndex === 0)
-							iDateIndex = i;
+						if (sCurrentMeasure.toLowerCase() == "date" && this.iDateIndex === 0)
+							this.iDateIndex = i;
 
-						else if (sCurrentMeasure.toLowerCase() == "time" && iTimeIndex === 0)
-							iTimeIndex = i;
+						else if (sCurrentMeasure.toLowerCase() == "time" && this.iTimeIndex === 0)
+							this.iTimeIndex = i;
 
-						else if (sCurrentMeasure.toLowerCase() == "as instance" && iAppServerIndex === 0)
-							iAppServerIndex = i;
+						else if (sCurrentMeasure.toLowerCase() == "as instance" && this.iAppServerIndex === 0)
+							this.iAppServerIndex = i;
 
-						else if (oResultSet[sCurrentMeasure]) {
-							oResultSet[sCurrentMeasure + "-1"] = {
+						else if (this.oResultSet[sCurrentMeasure]) {
+							this.oResultSet[sCurrentMeasure + "-1"] = {
 								"index": i
 							};
 						} else {
-							oResultSet[sCurrentMeasure] = {
+							this.oResultSet[sCurrentMeasure] = {
 								"index": i
 							};
 						}
 					}
 				}
 			}
+		},
 
-			var aKnownMeasures = Object.keys(oResultSet);
+		processDataSet: function () {
 
-			var aCurrentLine;
+			this.init();
+
+			this.setDataPayload();
+
+			this.setMeasuresIndex();
+
+			this.buildEmptyResultSet();
+
+			// // TODO: Add this back into result set
+			// let sDate = this.aDataSet[0].trim().split(' ')[0];
+
+			let aKnownMeasures = Object.keys(this.oResultSet);
+
+			let aCurrentLine;
 
 			// Start from line 6 // TODO: Make more fool-proof
-			for (let i = iMeasuresIndex + 2; i < aDataSet.length; i++) {
+			for (let i = this.iMeasuresIndex + 2; i < this.aDataSet.length; i++) {
 
 				// Break the line into several pieces -
-				aCurrentLine = aDataSet[i].split("|");
+				aCurrentLine = this.aDataSet[i].split("|");
 
 				// Either a blank line or a line with -----------
 				if (aCurrentLine.length < 2)
@@ -86,18 +120,18 @@ function PPTGenerator() {
 					// Break it down -
 
 					// Get the JSON Object associated specifically with this measures -
-					let oCurrentMeasure = oResultSet[aKnownMeasures[j]];
+					let oCurrentMeasure = this.oResultSet[aKnownMeasures[j]];
 
 					// oResultSet[aKnownMeasures[j]][aCurrentLine[iAppServerIndex]]
 					// In that JSON Object is there already info about this app server?
-					if (!oCurrentMeasure[aCurrentLine[iAppServerIndex]])
-						oCurrentMeasure[aCurrentLine[iAppServerIndex]] = {
+					if (!oCurrentMeasure[aCurrentLine[this.iAppServerIndex]])
+						oCurrentMeasure[aCurrentLine[this.iAppServerIndex]] = {
 							"TimeStamps": [],
 							"Values": []
 						};
 
-					var oCurrentMeasureAppServer = oCurrentMeasure[aCurrentLine[iAppServerIndex]];
-					oCurrentMeasureAppServer.TimeStamps.push(aCurrentLine[iTimeIndex]);
+					let oCurrentMeasureAppServer = oCurrentMeasure[aCurrentLine[this.iAppServerIndex]];
+					oCurrentMeasureAppServer.TimeStamps.push(aCurrentLine[this.iTimeIndex]);
 					try {
 						sCurrentLineValue = aCurrentLine[oCurrentMeasure.index];
 
@@ -114,7 +148,7 @@ function PPTGenerator() {
 					}
 				}
 			}
-			oResultSet.Date = sDate;
+			// this.oResultSet.Date = sDate;
 
 			// Data will look like this -
 			// {
@@ -131,12 +165,12 @@ function PPTGenerator() {
 			// 	}
 			// }
 
-			return oResultSet;
+			return this.oResultSet;
 		},
 
 		beginProcessing: function () {
 
-			var aChartData = this.processDataSet();
+			let aChartData = this.processDataSet();
 
 			// Data will look like this -
 			// {
@@ -153,9 +187,9 @@ function PPTGenerator() {
 			// 	}
 			// }
 
-			var pptx = new PptxGenJS();
+			let pptx = new PptxGenJS();
 
-			var aAllMeasures = Object.keys(aChartData);
+			let aAllMeasures = Object.keys(aChartData);
 
 			// Do a tweak here to show user info first -
 			//Logins and Sessions
@@ -197,9 +231,9 @@ function PPTGenerator() {
 					fontSize: 20
 				});
 
-				var aAppServers = Object.keys(oSpecificInfo);
+				let aAppServers = Object.keys(oSpecificInfo);
 
-				var aAppServerChartInfo = [];
+				let aAppServerChartInfo = [];
 				for (let j = 0; j < aAppServers.length; j++) {
 					let sAppServerName = aAppServers[j];
 
@@ -240,7 +274,7 @@ function PPTGenerator() {
 				});
 			}
 
-			var oGenerateButton = document.querySelector("#reportGenerateButton");
+			let oGenerateButton = document.querySelector("#reportGenerateButton");
 
 			oGenerateButton.disabled = true;
 			oGenerateButton.textContent = "Generating...";
